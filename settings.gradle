@@ -8,3 +8,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "JanusWebrtcAndroidSimple"
 include ':app'
+include ':JanusWebrtc'
