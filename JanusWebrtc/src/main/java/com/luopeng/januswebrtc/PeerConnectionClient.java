@@ -1,4 +1,4 @@
-package in.minewave.janusvideoroom;
+package com.luopeng.januswebrtc;
 
 import android.content.Context;
 import android.os.Environment;
@@ -375,13 +375,15 @@ public class PeerConnectionClient {
 
   private PeerConnection createPeerConnection(BigInteger handleId, boolean type) {
     Log.d(TAG, "Create peer connection.");
-    PeerConnection.IceServer iceServer = new PeerConnection.IceServer("turn:xxx.xxx.xx.xx:xxx", "ling", "ling1234");
-    PeerConnection.IceServer iceServer2 = new PeerConnection.IceServer("stun:47.99.64.51:3478");
-    PeerConnection.IceServer iceServer3 = new PeerConnection.IceServer("stun:39.99.45.149:3478");
+//    PeerConnection.IceServer iceServer = new PeerConnection.IceServer("turn:xxx.xxx.xx.xx:xxx", "ling", "ling1234");
+//    PeerConnection.IceServer iceServer2 = new PeerConnection.IceServer("stun:47.99.64.51:3478");
+//    PeerConnection.IceServer iceServer3 = new PeerConnection.IceServer("stun:39.99.45.149:3478");
     PeerConnection.IceServer iceServer4 = new PeerConnection.IceServer("stun:stun.freeswitch.org");
+    PeerConnection.IceServer iceServer5 = new PeerConnection.IceServer(WebRtcHelper.getInstance().iceServer);
 
     List<PeerConnection.IceServer> iceServers = new ArrayList<>();
-    iceServers.add(iceServer3);
+    iceServers.add(iceServer5);
+    iceServers.add(iceServer4);
     PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServers);
     rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.ALL;
 

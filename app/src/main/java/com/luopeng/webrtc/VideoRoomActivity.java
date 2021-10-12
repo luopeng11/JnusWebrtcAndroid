@@ -20,11 +20,11 @@ import org.webrtc.VideoCapturer;
 import org.webrtc.VideoRenderer;
 
 
-import in.minewave.janusvideoroom.JanusConnection;
-import in.minewave.janusvideoroom.JanusRTCInterface;
-import in.minewave.janusvideoroom.PeerConnectionClient;
-import in.minewave.janusvideoroom.PeerConnectionClient.PeerConnectionParameters;
-import in.minewave.janusvideoroom.WebSocketChannel;
+import com.luopeng.januswebrtc.JanusConnection;
+import com.luopeng.januswebrtc.JanusRTCInterface;
+import com.luopeng.januswebrtc.PeerConnectionClient;
+import com.luopeng.januswebrtc.PeerConnectionClient.PeerConnectionParameters;
+import com.luopeng.januswebrtc.WebRtcHelper;
 
 public class VideoRoomActivity extends AppCompatActivity implements JanusRTCInterface, PeerConnectionClient.PeerConnectionEvents {
     private static final String TAG = "MainActivity";
@@ -36,7 +36,7 @@ public class VideoRoomActivity extends AppCompatActivity implements JanusRTCInte
     private SurfaceViewRenderer remoteRender;
     private VideoCapturer videoCapturer;
     private EglBase rootEglBase;
-    private WebSocketChannel mWebSocketChannel;
+
     LinearLayout rootView;
     private long callStartedTimeMs = 0;
 
@@ -46,10 +46,9 @@ public class VideoRoomActivity extends AppCompatActivity implements JanusRTCInte
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_video_room);
         rootView = (LinearLayout) findViewById(R.id.activity_main);
-        mWebSocketChannel = new WebSocketChannel();
-        mWebSocketChannel.initConnection("ws://39.99.45.149:8188");
-//        mWebSocketChannel.initConnection("ws://116.62.60.244:8188");
-        mWebSocketChannel.setDelegate(this);
+
+        WebRtcHelper.getInstance().connect("ws://39.99.45.149:8188","stun:39.99.45.149:3478",18779886072l,"1231",3,this);
+
 
         createLocalRender();
         remoteRender = (SurfaceViewRenderer) findViewById(R.id.remote_video_view);
@@ -64,6 +63,32 @@ public class VideoRoomActivity extends AppCompatActivity implements JanusRTCInte
     protected void onResume() {
         super.onResume();
         peerConnectionClient.startVideoSource();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        peerConnectionClient.stopVideoSource();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        disconnect();
+    }
+
+    // Disconnect from remote resources, dispose of local resources, and exit.
+    private void disconnect() {
+       WebRtcHelper.getInstance().disConnect();
+
+        if (peerConnectionClient != null) {
+            peerConnectionClient.close();
+            peerConnectionClient = null;
+        }
+
+        if (localRender != null) localRender.clearImage();
+        if (remoteRender != null) remoteRender.clearImage();
+        finish();
     }
 
     private void createLocalRender() {
@@ -165,26 +190,41 @@ public class VideoRoomActivity extends AppCompatActivity implements JanusRTCInte
 
     }
 
+    @Override
+    public void onError(String message) {
+        runOnUiThread(() -> Toast.makeText(this, message, Toast.LENGTH_SHORT).show());
+    }
+
+    @Override
+    public void onMessage(String message) {
+        runOnUiThread(() -> Toast.makeText(this, message, Toast.LENGTH_SHORT).show());
+    }
+
+    @Override
+    public void onRoomReady() {
+        WebRtcHelper.getInstance().joinRoom();
+    }
+
     // interface PeerConnectionClient.PeerConnectionEvents
     @Override
     public void onLocalDescription(SessionDescription sdp, BigInteger handleId) {
         Log.e(TAG, sdp.type.toString());
-        mWebSocketChannel.publisherCreateOffer(handleId, sdp);
+        WebRtcHelper.getInstance().publisherCreateOffer(handleId, sdp);
     }
 
     @Override
     public void onRemoteDescription(SessionDescription sdp, BigInteger handleId) {
         Log.e(TAG, sdp.type.toString());
-        mWebSocketChannel.subscriberCreateAnswer(handleId, sdp);
+        WebRtcHelper.getInstance().subscriberCreateAnswer(handleId, sdp);
     }
 
     @Override
     public void onIceCandidate(IceCandidate candidate, BigInteger handleId) {
         Log.e(TAG, "=========onIceCandidate========");
         if (candidate != null) {
-            mWebSocketChannel.trickleCandidate(handleId, candidate);
+            WebRtcHelper.getInstance().trickleCandidate(handleId, candidate);
         } else {
-            mWebSocketChannel.trickleCandidateComplete(handleId);
+            WebRtcHelper.getInstance().trickleCandidateComplete(handleId);
         }
     }
 

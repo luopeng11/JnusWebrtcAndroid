@@ -1,4 +1,4 @@
-package in.minewave.janusvideoroom;
+package com.luopeng.januswebrtc;
 
 
 import org.json.JSONObject;
@@ -11,5 +11,8 @@ public interface JanusRTCInterface {
     void onPublisherRemoteJsep(BigInteger handleId, JSONObject jsep);
     void subscriberHandleRemoteJsep(BigInteger handleId, JSONObject jsep);
     void onLeaving(BigInteger handleId);
+    void onError(String message);
+    void onMessage(String message);
 
+    void onRoomReady();
 }

@@ -1,4 +1,4 @@
-package in.minewave.janusvideoroom;
+package com.luopeng.januswebrtc;
 
 
 import org.webrtc.PeerConnection;
