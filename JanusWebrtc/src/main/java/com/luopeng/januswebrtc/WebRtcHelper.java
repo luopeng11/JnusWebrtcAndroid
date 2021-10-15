@@ -147,8 +147,8 @@ public class WebRtcHelper implements JanusRTCInterface {
         if (mWebSocketChannel != null) mWebSocketChannel.joinRoom();
     }
 
-    public void disConnect() {
-        if (mWebSocketChannel != null) mWebSocketChannel.disconnectFromServer();
+    public void disConnect(boolean destroyRoom) {
+        if (mWebSocketChannel != null) mWebSocketChannel.disconnectFromServer(destroyRoom);
     }
 
     @Override

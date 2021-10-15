@@ -430,13 +430,23 @@ public class PeerConnectionClient {
     Log.d(TAG, "Closing peer connection.");
     statsTimer.cancel();
 
+//        if (peerConnectionMap != null) {
+//            for (Map.Entry<BigInteger, JanusConnection> entry : peerConnectionMap.entrySet()) {
+//                if (entry.getValue().peerConnection != null) {
+//                    entry.getValue().peerConnection.dispose();
+//                }
+//            }
+//        }
     if (peerConnectionMap != null) {
-      for (Map.Entry<BigInteger, JanusConnection> entry: peerConnectionMap.entrySet()) {
-        if (entry.getValue().peerConnection != null) {
-          entry.getValue().peerConnection.dispose();
+      for (JanusConnection conn : peerConnectionMap.values()) {
+        if (conn.peerConnection != null) {
+          conn.peerConnection.dispose();
+          conn.peerConnection = null;
         }
       }
+      peerConnectionMap.clear();
     }
+
     Log.d(TAG, "Closing audio source.");
     if (audioSource != null) {
       audioSource.dispose();

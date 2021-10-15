@@ -22,7 +22,6 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
-import okhttp3.logging.HttpLoggingInterceptor;
 import okio.ByteString;
 
 
@@ -55,7 +54,7 @@ public class WebSocketChannel {
         this.mMaxPublishersNum = maxPublishersNum;
         this.mDisplayName = displayName;
         OkHttpClient httpClient = new OkHttpClient.Builder()
-                .addNetworkInterceptor(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
+               // .addNetworkInterceptor(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
                 .addInterceptor(new Interceptor() {
                     @Override
                     public Response intercept(Interceptor.Chain chain) throws IOException {
@@ -154,6 +153,15 @@ public class WebSocketChannel {
 
                 } else if (janus.equals("detached")) {
                     handle.onLeaving.onJoined(handle);
+                }else if (janus.equals("media")) {
+                    String type = jo.optString("type");
+                    boolean receiving = jo.optBoolean("receiving");
+                    Log.e(TAG, "media type:" + type + "  receiving:" + receiving);
+                    if (!receiving) delegate.onError(type + "中断！");
+                } else if (janus.equals("slowlink")) {
+                    String media = jo.optString("media");
+                    Log.e(TAG, "media type:" + media + "  slowlink");
+                    delegate.onMessage("您当前" + media + "通话网络质量差！");
                 }
             }
         } catch (JSONException e) {
@@ -301,7 +309,7 @@ public class WebSocketChannel {
             body.putOpt("is_private", false);//是否私人聊天室 列表请求时 不会出现私人房间，默认值为false
 
             body.putOpt("publishers", mMaxPublishersNum);//并发发送者的最大数量 例如，视频会议为6，网络研讨会为 1，默认值 = 3
-            body.putOpt("bitrate", 800000);//发件人的最大视频比特率 例如，128000
+            body.putOpt("bitrate", 300000);//发件人的最大视频比特率 例如，128000
             body.putOpt("bitrate_cap", true);//true|false，上述上限是否应作为发布者动态比特率变化的限制，默认=false
             body.putOpt("fir_freq", 20);//每 fir_freq 秒向发布者发送 FIR>（0=禁用）
 
@@ -309,14 +317,14 @@ public class WebSocketChannel {
             body.putOpt("audiocodec", "opus,isac32,isac16");
 
             // vp8|vp9|h264|av1|h265（视频编解码器强制发布商，default=vp8 可以是一个逗号分隔的列表，按照偏好的顺序，例如，vp9,vp8,h264)
-            body.putOpt("videocodec", "h264,vp9,vp8");
+            body.putOpt("videocodec", "vp9,vp8");
             // body.putOpt("vp9_profile", "2");//VP9 特定的配置文件（例如，“2”代表“profile-id=2”）
             // body.putOpt("h264_profile", "42e01f");//首选的 H.264 特定配置文件（例如，“42e01f”代表“profile-level-id=42e01f”）
             body.putOpt("opus_fec", false);//是否必须协商带内 FEC；仅适用于 Opus，默认 = false
             body.putOpt("video_svc", false);//是否必须启用 SVC 支持；仅适用于 VP9，默认=false
 
             body.putOpt("audiolevel_ext", true);//是否必须为新发布商协商/使用ssrc-audio-level RTP 扩展，默认=true
-            body.putOpt("audiolevel_event", true);//true|false (是否向其他用户发出事件，默认=false)
+            body.putOpt("audiolevel_event", false);//true|false (是否向其他用户发出事件，默认=false)
             body.putOpt("audio_active_packets", 100);//音频级别的数据包数量，默认= 100，2秒
             body.putOpt("audio_level_average", 25);//音频电平的平均值，127=静音，0='太响'，默认=25
             body.putOpt("videoorient_ext", true);//是否必须为新发布商协商/使用视频方向RTP扩展，默认=true
@@ -603,11 +611,12 @@ public class WebSocketChannel {
         return sb.toString();
     }
 
-    public void disconnectFromServer() {
+    public void disconnectFromServer(boolean destroyRoom) {
         mHandler.post(new Runnable() {
             @Override
             public void run() {
-                destroyRoom();
+                if (destroyRoom)destroyRoom();
+                else disconnect();
                 mHandler.removeCallbacksAndMessages(null);
             }
         });

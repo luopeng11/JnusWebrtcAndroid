@@ -1,13 +1,18 @@
 package com.luopeng.webrtc;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+
 import org.json.JSONObject;
+
 import java.math.BigInteger;
+
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
@@ -47,13 +52,14 @@ public class VideoRoomActivity extends AppCompatActivity implements JanusRTCInte
         setContentView(R.layout.activity_video_room);
         rootView = (LinearLayout) findViewById(R.id.activity_main);
 
-        WebRtcHelper.getInstance().connect("ws://39.99.45.149:8188","stun:39.99.45.149:3478",18779886072l,"1231",3,this);
+//        WebRtcHelper.getInstance().connect("ws://116.62.60.244:8188", "stun:47.99.64.51:3478", 1234, "1231", 3, this);
+        WebRtcHelper.getInstance().connect("ws://39.99.45.149:8188", "stun:39.99.45.149:3478", 18779886072l, "1231", 3, this);
 
 
         createLocalRender();
         remoteRender = (SurfaceViewRenderer) findViewById(R.id.remote_video_view);
         remoteRender.init(rootEglBase.getEglBaseContext(), null);
-        peerConnectionParameters = new PeerConnectionParameters(false, 360, 480, 20, "H264", true, 0, "opus", false, false, false, false, false);
+        peerConnectionParameters = new PeerConnectionParameters(false, 720, 1280, 20, "vp9", true, 0, "opus", false, false, false, false, false);
         peerConnectionClient = PeerConnectionClient.getInstance();
         peerConnectionClient.createPeerConnectionFactory(this, peerConnectionParameters, this);
         callStartedTimeMs = System.currentTimeMillis();
@@ -79,7 +85,7 @@ public class VideoRoomActivity extends AppCompatActivity implements JanusRTCInte
 
     // Disconnect from remote resources, dispose of local resources, and exit.
     private void disconnect() {
-       WebRtcHelper.getInstance().disConnect();
+        WebRtcHelper.getInstance().disConnect(true);
 
         if (peerConnectionClient != null) {
             peerConnectionClient.close();
@@ -109,7 +115,7 @@ public class VideoRoomActivity extends AppCompatActivity implements JanusRTCInte
     private VideoCapturer createCameraCapturer(CameraEnumerator enumerator) {
         final String[] deviceNames = enumerator.getDeviceNames();
 
-        if (deviceNames.length>0)return enumerator.createCapturer(deviceNames[0], null);
+        if (deviceNames.length > 0) return enumerator.createCapturer(deviceNames[0], null);
 
         // First, try to find front facing camera
         Log.d(TAG, "Looking for front facing cameras.");
@@ -192,7 +198,15 @@ public class VideoRoomActivity extends AppCompatActivity implements JanusRTCInte
 
     @Override
     public void onError(String message) {
-        runOnUiThread(() -> Toast.makeText(this, message, Toast.LENGTH_SHORT).show());
+        runOnUiThread(() -> {
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+            new AlertDialog.Builder(this).setTitle("聊天中断," + message).setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    finish();
+                }
+            }).create().show();
+        });
     }
 
     @Override
@@ -262,7 +276,15 @@ public class VideoRoomActivity extends AppCompatActivity implements JanusRTCInte
 
     @Override
     public void onPeerConnectionError(String description) {
-
+        runOnUiThread(() -> {
+            Toast.makeText(this, description, Toast.LENGTH_SHORT).show();
+            new AlertDialog.Builder(this).setTitle("聊天中断," + description).setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    finish();
+                }
+            }).create().show();
+        });
     }
 
     @Override
